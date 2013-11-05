@@ -18,17 +18,18 @@ public:
      * @param str   the string you want to convert
      * @param width target width + height of the image you want to output (will resize proportionally to returned data)
      * @param caseSensive (optional) worry about converting the case. tends to return all uppercase if this is left false
+     * @param usePadding Adds white padding to the image returned
      * @return ofImage with 
      */
     
-    ofImage generate( string str, int width, bool caseSensitve=false ){
+    ofImage generate( string str, int width, bool caseSensitive=false, bool usePadding = false ){
         
         // try to decode
-        QRcode * q = QRcode_encodeString( str.c_str(), 0, QR_ECLEVEL_M, QR_MODE_8, caseSensitve ? 1 : 0);
+        QRcode * q = QRcode_encodeString( str.c_str(), 0, QR_ECLEVEL_M, QR_MODE_8, caseSensitive ? 1 : 0);
         
         if ( q != NULL ){
             int goodWidth = width;
-            
+
             // resize up to something the returned data will fit into nicely
             while ( goodWidth % q->width != 0 ){
                 goodWidth++;
@@ -39,9 +40,11 @@ public:
             width = goodWidth;
             
             int ratio = width / q->width;
+            int padding = usePadding? ratio : 0;
             
             ofPixels pix;
-            pix.allocate( width, width, OF_IMAGE_GRAYSCALE );
+            pix.allocate( width + padding * 2, width + padding * 2, OF_IMAGE_GRAYSCALE );
+            pix.setColor(ofColor(255,255,255));
             
             for (int y=0; y < q->width; y++){
                 for (int x=0; x < q->width; x++){
@@ -54,14 +57,15 @@ public:
                     for (int y1=0; y1<ratio; y1++){
                         for (int x1=0; x1<ratio; x1++){
                             if ( c == 1){
-                                pix[ (x*ratio + x1) + (y*ratio + y1)*width ] = 0;
+                                pix[ padding + (x*ratio + x1) + (y*ratio + y1 + padding)*(width + padding*2) ] = 0;
                             } else {
-                                pix[ (x*ratio + x1) + (y*ratio + y1)*width ] = 255;
+                                pix[ padding + (x*ratio + x1) + (y*ratio + y1 + padding)*(width +padding*2)] = 255;
                             }
                         }
                     }
                 }
             }
+            
             // free to encode another code!
             QRcode_free( q );
             
